@@ -6,7 +6,13 @@
         xmlns:local="clr-namespace:Neudio.GUI"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-
-    </Grid>
+    <StackPanel Orientation="Vertical" Margin="10">
+        <StackPanel Orientation="Horizontal">
+            <Button Name="TestButton" Click="TestButton_Click" Content="Test" Width="100" Height="30"/>
+            <Button Name="StartRecordingButton" Click="StartRecordingButton_Click" Content="Start" Width="100" Height="30"/>
+            <Button Name="StopRecordingButton" Click="StopRecordingButton_Click" Content="Stop" Width="100" Height="30"/>
+        </StackPanel>
+        <TextBox Name="SaveFileNameBox"/>
+        <local:DataVisualizer x:Name="Visualizer" Width="100" Height="100" HorizontalAlignment="Left"/>
+    </StackPanel>
 </Window>

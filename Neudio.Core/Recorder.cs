@@ -7,38 +7,33 @@ namespace Neudio.Core
         public RecorderConfig Config { get; }
         public bool IsRecording { get; private set; }
 
+        public WaveData WaveData { get; set; }
         private NAudio.Wave.WaveInEvent WaveIn { get; set; }
-        private NAudio.Wave.WaveFileWriter WaveWriter { get; set; }
 
         public Recorder(RecorderConfig config)
         {
             Config = config;
         }
 
-        public static NAudio.Wave.WaveInEvent CreateWaveIn(RecorderConfig config, NAudio.Wave.WaveFileWriter writer)
+        public static WaveData CreateWaveData(RecorderConfig config)
+        {
+            var format = new NAudio.Wave.WaveFormat(WaveData.Format.SampleRate, 1);
+            var waveData = new WaveData(config.RecordSeconds);
+            return waveData;
+        }
+
+        public static NAudio.Wave.WaveInEvent CreateWaveIn(RecorderConfig config, WaveData waveData)
         {
             var waveIn = new NAudio.Wave.WaveInEvent();
             waveIn.DeviceNumber = config.DeviceNumber;
-            waveIn.WaveFormat = writer.WaveFormat;
+            waveIn.WaveFormat = WaveData.Format;
 
             waveIn.DataAvailable += (_, e) =>
             {
-                writer.Write(e.Buffer, 0, e.BytesRecorded);
-                writer.Flush();
-            };
-            waveIn.RecordingStopped += (_, __) =>
-            {
-                writer.Flush();
+                waveData.AppendBytes(e.Buffer, e.BytesRecorded);
             };
 
             return waveIn;
-        }
-
-        public static NAudio.Wave.WaveFileWriter CreateWaveFileWriter(RecorderConfig config)
-        {
-            var format = new NAudio.Wave.WaveFormat(config.SamplingRate, config.ChannelCount);
-            var writer = new NAudio.Wave.WaveFileWriter(config.FileName, format);
-            return writer;
         }
 
         public void Start()
@@ -47,8 +42,8 @@ namespace Neudio.Core
                 return;
 
             IsRecording = true;
-            WaveWriter = CreateWaveFileWriter(Config);
-            WaveIn = CreateWaveIn(Config, WaveWriter);
+            WaveData = CreateWaveData(Config);
+            WaveIn = CreateWaveIn(Config, WaveData);
 
             WaveIn?.StartRecording();
         }
@@ -61,15 +56,19 @@ namespace Neudio.Core
             IsRecording = false;
             WaveIn?.StopRecording();
             WaveIn?.Dispose();
-            WaveWriter?.Dispose();
+        }
+
+        public void Save(string filename)
+        {
+            var writer = new NAudio.Wave.WaveFileWriter(filename, WaveData.Format);
+            writer.WriteSamples(WaveData.Samples, 0, WaveData.SampleLength);
+            writer.Close();
         }
     }
 
     public class RecorderConfig
     {
-        public string FileName { get; set; } = "";
+        public double RecordSeconds { get; set; }
         public int DeviceNumber { get; set; } = 0;
-        public int SamplingRate { get; set; } = 44100;
-        public int ChannelCount { get; set; } = 1;
     }
 }
