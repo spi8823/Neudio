@@ -10,7 +10,8 @@ namespace Neudio.Core
     {
         public const int BlockSize = 2048;
 
-        private double[] Frequencies { get; } = new double[BlockSize];
+        public double[] Spectrum { get; } = new double[BlockSize];
+        public double[] PowerSpectrum { get; } = new double[BlockSize];
         private double[] Samples { get; } = new double[BlockSize];
         private bool HasConvertApplied { get; set; } = true;
 
@@ -19,10 +20,23 @@ namespace Neudio.Core
             var offset = blockIndex * BlockSize;
             Parallel.For(0, BlockSize, i =>
             {
-                Frequencies[i] = samples[offset + i];
+                Spectrum[i] = samples[offset + i];
             });
 
-            CosineTransform.DCT(Frequencies);
+            CosineTransform.DCT(Spectrum);
+            CalculatePowerSpectrum();
+        }
+
+        public FrequencyData(short[] samples, int blockIndex)
+        {
+            var offset = blockIndex * BlockSize;
+            Parallel.For(0, BlockSize, i =>
+            {
+                Spectrum[i] = samples[offset + i];
+            });
+
+            CosineTransform.DCT(Spectrum);
+            CalculatePowerSpectrum();
         }
 
         public FrequencyData(WaveData waveData, int blockIndex)
@@ -30,28 +44,37 @@ namespace Neudio.Core
             var offset = blockIndex * BlockSize;
             Parallel.For(0, BlockSize, i =>
             {
-                Frequencies[i] = waveData.Samples[offset + i];
+                Spectrum[i] = waveData.Samples[offset + i];
             });
 
-            CosineTransform.DCT(Frequencies);
+            CosineTransform.DCT(Spectrum);
+            CalculatePowerSpectrum();
+        }
+
+        private void CalculatePowerSpectrum()
+        {
+            for(var i = 0;i < BlockSize;i++)
+            {
+                PowerSpectrum[i] = Math.Log10(Math.Abs(Spectrum[i]));
+            }
         }
 
         public double this[int i]
         {
             get 
             {
-                return Frequencies[i];
+                return Spectrum[i];
             }
             set 
             {
-                Frequencies[i] = value;
+                Spectrum[i] = value;
                 HasConvertApplied = false;
             }
         }
 
         public void ApplyConvert()
         {
-            Frequencies.CopyTo(Samples);
+            Spectrum.CopyTo(Samples);
             CosineTransform.IDCT(Samples);
             HasConvertApplied = true;
         }

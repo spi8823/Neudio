@@ -16,14 +16,14 @@ namespace Neudio.GUI
     /// <summary>
     /// DataVisualizer.xaml の相互作用ロジック
     /// </summary>
-    public partial class DataVisualizer : UserControl
+    public partial class DataViewer : UserControl
     {
         private readonly OxyPlot.Series.LineSeries Series = new OxyPlot.Series.LineSeries()
         {
             StrokeThickness = 0.5
         };
 
-        public DataVisualizer()
+        public DataViewer()
         {
             InitializeComponent();
             InitializeView();
@@ -41,37 +41,53 @@ namespace Neudio.GUI
 
             model.Series.Add(Series);
 
-            GraphView.Model = model;
+            Graph.Model = model;
         }
 
-        public void SetDataRange(int length, double min, double max)
+        public void SetDataRange(int length, double minX, double maxX, double minY, double maxY)
         {
             Series.Points.Clear();
             for(var i = 0;i < length;i++)
             {
-                var point = new OxyPlot.DataPoint((max - min) * i / length + min, 0);
+                var point = new OxyPlot.DataPoint((maxX - minX) * i / length + minX, 0);
                 Series.Points.Add(point);
             }
+
+            Series.YAxis.Minimum = minY;
+            Series.YAxis.Maximum = maxY;
         }
 
-        public void SetData(double[] datas)
+        public void SetDataRange(int length, Func<int, double> indexToX, (double min, double max) YRange)
         {
-            var count = Series.Points.Count;
+            Series.Points.Clear();
+            for(var i = 0;i < length;i++)
+            {
+                var point = new OxyPlot.DataPoint(indexToX(i), 0);
+                Series.Points.Add(point);
+            }
+
+            Series.YAxis.Minimum = YRange.min;
+            Series.YAxis.Maximum = YRange.max;
+        }
+
+        public void SetData(double[] datas, int offset, int count)
+        {
             for(var i = 0;i < count;i++)
             {
-                Series.Points[i] = new OxyPlot.DataPoint(Series.Points[i].X, datas[i]);
+                Series.Points[i] = new OxyPlot.DataPoint(Series.Points[i].X, datas[offset + i]);
             }
 
-            GraphView.InvalidatePlot();
+            Graph.InvalidatePlot();
         }
 
-        public void SetData(short[] datas)
+        public void SetData(short[] datas, int offset, int count)
         {
-            var count = Series.Points.Count;
             for (var i = 0; i < count; i++)
             {
-                Series.Points[i] = new OxyPlot.DataPoint(Series.Points[i].X, datas[i]);
+                Series.Points[i] = new OxyPlot.DataPoint(Series.Points[i].X, datas[offset + i]);
             }
+
+            Graph.InvalidatePlot();
         }
     }
 

@@ -10,19 +10,21 @@ namespace Neudio.Core
         public WaveData WaveData { get; set; }
         private NAudio.Wave.WaveInEvent WaveIn { get; set; }
 
+        public Action<(short[] samples, int blockNumber)> OnRecorededOneBlock { get; set; }
+
         public Recorder(RecorderConfig config)
         {
             Config = config;
         }
 
-        public static WaveData CreateWaveData(RecorderConfig config)
+        private WaveData CreateWaveData(RecorderConfig config)
         {
             var format = new NAudio.Wave.WaveFormat(WaveData.Format.SampleRate, 1);
             var waveData = new WaveData(config.RecordSeconds);
             return waveData;
         }
 
-        public static NAudio.Wave.WaveInEvent CreateWaveIn(RecorderConfig config, WaveData waveData)
+        private NAudio.Wave.WaveInEvent CreateWaveIn(RecorderConfig config, WaveData waveData)
         {
             var waveIn = new NAudio.Wave.WaveInEvent();
             waveIn.DeviceNumber = config.DeviceNumber;
@@ -30,7 +32,15 @@ namespace Neudio.Core
 
             waveIn.DataAvailable += (_, e) =>
             {
+                var previouSampleLength = waveData.SampleLength;
                 waveData.AppendBytes(e.Buffer, e.BytesRecorded);
+                var nowSampleLength = waveData.SampleLength;
+
+                var addedBlocks = nowSampleLength / FrequencyData.BlockSize - previouSampleLength / FrequencyData.BlockSize;
+                for (var i = previouSampleLength / FrequencyData.BlockSize; i < nowSampleLength / FrequencyData.BlockSize; i++)
+                {
+                    OnRecorededOneBlock?.Invoke((waveData.Samples, i));
+                }
             };
 
             return waveIn;

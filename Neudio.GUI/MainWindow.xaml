@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Neudio.GUI"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="800" Width="800">
     <StackPanel Orientation="Vertical" Margin="10">
         <StackPanel Orientation="Horizontal">
             <Button Name="TestButton" Click="TestButton_Click" Content="Test" Width="100" Height="30"/>
@@ -13,6 +13,8 @@
             <Button Name="StopRecordingButton" Click="StopRecordingButton_Click" Content="Stop" Width="100" Height="30"/>
         </StackPanel>
         <TextBox Name="SaveFileNameBox"/>
-        <local:DataVisualizer x:Name="Visualizer" Width="100" Height="100" HorizontalAlignment="Left"/>
+        <local:DataViewer x:Name="WaveViewer" Width="Auto" Height="300" HorizontalAlignment="Stretch"/>
+        <local:DataViewer x:Name="FrequencyViewer" Width="Auto" Height="300" HorizontalAlignment="Stretch"/>
+        <local:FileBrowser/>
     </StackPanel>
 </Window>

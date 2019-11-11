@@ -25,20 +25,6 @@ namespace Neudio.GUI
         public MainWindow()
         {
             InitializeComponent();
-
-            Visualizer.SetDataRange(100, 0, 100);
-            var datas = new double[100];
-            var random = new Random();
-            var timer = new System.Timers.Timer(10);
-            timer.Elapsed += (a, b) =>
-            {
-                for (var i = 0; i < 100; i++)
-                {
-                    datas[i] = random.NextDouble() * 100;
-                }
-                Visualizer.SetData(datas);
-            };
-            timer.Start();
         }
 
         private void StartRecordingButton_Click(object sender, RoutedEventArgs e)
@@ -46,10 +32,20 @@ namespace Neudio.GUI
             var config = new Core.RecorderConfig()
             {
                 DeviceNumber = 0,
-                RecordSeconds = 10,
+                RecordSeconds = 100,
             };
             Recorder = new Core.Recorder(config);
+            WaveViewer.SetDataRange(Core.FrequencyData.BlockSize, 0, Core.FrequencyData.BlockSize, short.MinValue, short.MaxValue);
+            FrequencyViewer.SetDataRange(Core.FrequencyData.BlockSize, i => Math.Log2(i + 1), (min: -10, max: 10));
+            Recorder.OnRecorededOneBlock += OnRecordedOneBlock;
             Recorder.Start();
+        }
+
+        private void OnRecordedOneBlock((short[] samples, int blockIndex) data)
+        {
+            WaveViewer.SetData(data.samples, Core.FrequencyData.BlockSize * data.blockIndex, Core.FrequencyData.BlockSize);
+            var frequencyData = new Core.FrequencyData(data.samples, data.blockIndex);
+            FrequencyViewer.SetData(frequencyData.PowerSpectrum, 0, Core.FrequencyData.BlockSize);
         }
 
         private void StopRecordingButton_Click(object sender, RoutedEventArgs e)
